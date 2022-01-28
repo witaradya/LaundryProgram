@@ -42,6 +42,9 @@ bool OpenWeb = false, disconnect = true;
 int firstWait = 1;
 int * waiting = &firstWait;
 
+unsigned long prevTime, currentTime;
+unsigned int detik, menit;
+
 void notFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not found");
 }
@@ -164,23 +167,35 @@ void WIFI_Connection(){
 void setup() {
   Serial.begin(115200);
 
-  pinMode(2, OUTPUT);
+//   pinMode(2, OUTPUT);
 
-  if(!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)){
-        Serial.println("SPIFFS Mount Failed");
-        return;
-  }
-  Serial.println("Initalized");
+//   if(!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)){
+//         Serial.println("SPIFFS Mount Failed");
+//         return;
+//   }
+//   Serial.println("Initalized");
 
-  WIFI_Connection();
+//   WIFI_Connection();
 }
 
 void loop() {
-  if(WiFi.status() != WL_CONNECTED){
-    digitalWrite(2, LOW);
-    disconnect = true;
-    WIFI_Connection();
-  }
-  Serial.println("Masuk Loop");
-  delay(1000);
+//   if(WiFi.status() != WL_CONNECTED){
+//     digitalWrite(2, LOW);
+//     disconnect = true;
+//     WIFI_Connection();
+//   }
+//   Serial.println("Masuk Loop");
+//   delay(1000);
+    currentTime = millis();
+    if((currentTime - prevTime) >= 1000){
+        detik++;
+        if(detik == 60){
+            menit++;
+            detik = 0;
+        }
+        Serial.print(menit);
+        Serial.print("\t");
+        Serial.println(detik);
+        prevTime = millis();
+    }
 }
