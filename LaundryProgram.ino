@@ -45,157 +45,39 @@ int * waiting = &firstWait;
 unsigned long prevTime, currentTime;
 unsigned int detik, menit;
 
-void notFound(AsyncWebServerRequest *request) {
-  request->send(404, "text/plain", "Not found");
-}
-
-String readFile(fs::FS &fs, const char * path){
-  String result;
-  Serial.printf("Reading file: %s\r\n", path);
-
-  File file = fs.open(path);
-  if(!file || file.isDirectory()){
-      Serial.println("- failed to open file for reading");
-      return "salah";
-  }
-
-  Serial.println("- read from file:");
-  while(file.available()){
-      char a = file.read();
-      result += a;
-  }
-  Serial.println(result);
-  return result;
-  file.close();
-}
-
-void writeFile(fs::FS &fs, const char * path, String message){
-    Serial.printf("Writing file: %s\r\n", path);
-
-    File file = fs.open(path, FILE_WRITE);
-    if(!file){
-        Serial.println("- failed to open file for writing");
-        return;
-    }
-    if(file.print(message)){
-        Serial.println("- file written");
-    } else {
-        Serial.println("- write failed");
-    }
-    file.close();
-}
-
-void WEB_Login(){
-  WiFi.softAP(ssid, password);
-  IPAddress myIP = WiFi.softAPIP();
-  Serial.print("AP IP address: ");
-  Serial.println(myIP);
-
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send_P(200, "text/html", index_html);
-  });
-
-  server.on("/get", HTTP_GET, [] (AsyncWebServerRequest *request) {
-    String fsSSID, fsPASS;
-    if ((request->hasParam("ssid")) && (request->hasParam("pass"))) {
-      fsSSID = request->getParam("ssid")->value();
-      fsPASS = request->getParam("pass")->value();
-    }
-    if(fsSSID == "" || fsPASS == ""){
-      request->send(200, "text/html", "ULANGI! USERNAME / PASSWORD KOSONG!<br><a href=\"/\">Return to Home Page</a>");
-    }
-    else {
-      request->send(200, "text/html", "SSID ("+ fsSSID + ") dan PASS (" + fsPASS +") BERHASIL DISIMPAN!");
-      writeFile(SPIFFS, "/ssid.txt", fsSSID);
-      writeFile(SPIFFS, "/pass.txt", fsPASS);
-      OpenWeb = false;
-      *waiting = 0;
-    }
-  });
-  server.onNotFound(notFound);
-  server.begin();
-}
-
-void WIFI_Connection(){
-  while(disconnect){
-    if(!OpenWeb){
-      digitalWrite(2, LOW);
-      UserName = readFile(SPIFFS, "/ssid.txt");
-      PassWord = readFile(SPIFFS, "/pass.txt");
-      if(UserName == "" || PassWord == "" || UserName == " " || PassWord == " "){
-        OpenWeb = true;
-        Serial.println("Koneksi gagal");
-      }
-      else{
-        Serial.println("Koneksi Sukses, Lanjut ke wifi");
-        delay(1000);
-        WiFi.mode(WIFI_STA);
-        WiFi.begin(UserName.c_str(), PassWord.c_str());
-        if (WiFi.waitForConnectResult() != WL_CONNECTED) {
-          OpenWeb = true;
-          Serial.println("WiFi Failed!");
-        }
-        else{
-          digitalWrite(2, HIGH);
-          Serial.println();
-          Serial.print("IP Address: ");
-          Serial.println(WiFi.localIP());
-          disconnect = false;
-        }      
-      }    
-    }
-    else{
-      *waiting = 1;
-      server.begin();
-      Serial.println("Masuk Web");
-      WEB_Login();
-      Serial.println(firstWait);
-      while(firstWait){
-        if(WiFi.status() == WL_CONNECTED){
-          *waiting = 0;
-          OpenWeb = false;
-          //disconnect = false;
-        }
-        Serial.println(firstWait);
-        delay(1000);
-      }
-    }
-  }
-}
-
 
 void setup() {
   Serial.begin(115200);
 
-//   pinMode(2, OUTPUT);
+  pinMode(2, OUTPUT);
 
-//   if(!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)){
-//         Serial.println("SPIFFS Mount Failed");
-//         return;
-//   }
-//   Serial.println("Initalized");
+  if(!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)){
+        Serial.println("SPIFFS Mount Failed");
+        return;
+  }
+  Serial.println("Initalized");
 
-//   WIFI_Connection();
+  WIFI_Connection();
 }
 
 void loop() {
-//   if(WiFi.status() != WL_CONNECTED){
-//     digitalWrite(2, LOW);
-//     disconnect = true;
-//     WIFI_Connection();
-//   }
-//   Serial.println("Masuk Loop");
-//   delay(1000);
-    currentTime = millis();
-    if((currentTime - prevTime) >= 1000){
-        detik++;
-        if(detik == 60){
-            menit++;
-            detik = 0;
-        }
-        Serial.print(menit);
-        Serial.print("\t");
-        Serial.println(detik);
-        prevTime = millis();
-    }
+  if(WiFi.status() != WL_CONNECTED){
+    digitalWrite(2, LOW);
+    disconnect = true;
+    WIFI_Connection();
+  }
+  Serial.println("Masuk Loop");
+  delay(1000);
+    // currentTime = millis();
+    // if((currentTime - prevTime) >= 1000){
+    //     detik++;
+    //     if(detik == 60){
+    //         menit++;
+    //         detik = 0;
+    //     }
+    //     Serial.print(menit);
+    //     Serial.print("\t");
+    //     Serial.println(detik);
+    //     prevTime = millis();
+    // }
 }
