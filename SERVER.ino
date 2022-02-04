@@ -18,12 +18,12 @@ void SERVER_getJsonResponse(){
       deserializeJson(doc,http.getString());
 
       machineState = doc["machine_status"];
-      Serial.print("Mesin status : ");
-      Serial.println(machineState);
+      // Serial.print("Mesin status : ");
+      // Serial.println(machineState);
       if(machineState && !prevMachineState) {
         setMachineON = true;
         machineOn = true;
-        Serial.println("Nyalakan Mesin ...");
+        // Serial.println("Nyalakan Mesin ...");
       }
         // String payload = http.getString();
         // Serial.println(httpCode);
@@ -58,7 +58,7 @@ bool SERVER_Update(bool stsMachine){
   }
   
   http.end();
-  
+
   if(httpResponseCode > 0) return true;
   else return false;
 }

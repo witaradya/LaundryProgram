@@ -163,7 +163,7 @@ void loop() {
       MACHINE_on();
 
       currentTime = millis();
-      if((currentTime - prevTime) >= 1000){
+      if((currentTime - prevTime) >= 900){
         detik++;
         if(detik == 60){
             menit++;
