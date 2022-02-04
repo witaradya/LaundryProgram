@@ -44,7 +44,7 @@ AsyncWebServer server(80);
 HTTPClient http;
 
 // REPLACE WITH YOUR NETWORK CREDENTIALS
-const char* ssid = "laundry";
+const char* ssid = "Dryer 1";
 const char* password = "12345678";
 
 const char* FileSSID = "/ssid.txt";
@@ -88,6 +88,10 @@ bool machineState = false, prevMachineState = false;
 bool setMachineON = false, machineOn = false;
 bool updateServer = false;
 
+//RESET
+unsigned long btnTime, prevBtnTime;
+bool paksaNyala = false;
+
 void EEPROM_Init(){
   if(!EEPROM.begin(3)){
     Serial.println("Failed to init EEPROM");
@@ -118,11 +122,22 @@ void MACHINE_on(){
   }
 }
 
+void IRAM_ATTR isr() {
+  btnTime = millis();
+  if(btnTime - prevBtnTime >= 5000){
+    paksaNyala = true;
+    prevBtnTime = millis();
+  }
+}
+
 void setup() {
   Serial.begin(115200);
 
   pinMode(PIN_MACHINE, OUTPUT);
   pinMode(LED_WIFI, OUTPUT);
+
+  pinMode(RESET_BTN, INPUT);
+  attachInterrupt(RESET_BTN, isr, FALLING);
 
   if(!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)){
         Serial.println("SPIFFS Mount Failed");
@@ -187,5 +202,11 @@ void loop() {
         EEPROM.commit();
       }
     }
+  }
+
+  if(paksaNyala){
+    machineOn = true;
+    MACHINE_on();
+    paksaNyala = false;
   }
 }
