@@ -36,7 +36,7 @@ void WIFI_WebLogin(){
 void WIFI_Connection(){
   while(disconnect){
     if(!OpenWeb){
-      digitalWrite(2, LOW);
+      digitalWrite(LED_WIFI, LOW);
       UserName = FILE_read(SPIFFS, "/ssid.txt");
       PassWord = FILE_read(SPIFFS, "/pass.txt");
       if(UserName == "" || PassWord == "" || UserName == " " || PassWord == " "){
@@ -53,7 +53,7 @@ void WIFI_Connection(){
           Serial.println("WiFi Failed!");
         }
         else{
-          digitalWrite(2, HIGH);
+          digitalWrite(LED_WIFI, HIGH);
           Serial.println();
           Serial.print("IP Address: ");
           Serial.println(WiFi.localIP());
