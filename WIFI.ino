@@ -2,6 +2,16 @@ void WIFI_notFound(AsyncWebServerRequest *request) {
   request->send(404, "text/plain", "Not found");
 }
 
+/*
+ * @brief     : WIFI_WebLogin handle Form Login using WEB Server Based(192.168.4.1)
+
+ * @details   : Activate web server(this module change to web server based) for show Login form
+ *              This form can be accsess by enterin 192.168.4.1 and then you must enter SSID and PASS
+ * 
+ * @param     : none
+ * 
+ * @retval    : none 
+ */
 void WIFI_WebLogin(){
   WiFi.softAP(ssid, password);
   IPAddress myIP = WiFi.softAPIP();
@@ -33,6 +43,23 @@ void WIFI_WebLogin(){
   server.begin();
 }
 
+/*
+ * @brief      : WIFI Connection Function
+
+ * @details    : Handle if this controler not connect to WiFi or first initial to connect WiFi
+                 Get SSID and PASS from ssid.txt and pass.txt via SPIFFS
+ *               1. Turn off WiFi Led Indicator
+ *               2. Read SSID and PASS that saved in ssid.txt and pass.txt
+ *               3. Connect to WiFi based on the SSID and PASS
+ *               4. If failed connect to SSID, this module change to Access Poin and you must input new and correct SSID and PASS via web
+ *                  visit 192.168.4.1 to input new SSID and PASS
+ *               5. Your new SSID and PASS will be saved in ssid.txt and pass.txt via SPIFFS
+ *               6. And then this module will automatically connect to newest SSID and PASS
+ * 
+ * @param      : none
+ * 
+ * @retval     : none
+ */
 void WIFI_Connection(){
   while(disconnect){
     if(!OpenWeb){

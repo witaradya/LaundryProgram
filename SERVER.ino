@@ -7,6 +7,21 @@ void SERVER_Get(String JSONMessage){
     Serial.println(machineSts);
 }
 
+
+/* 
+ * @brief     : GET Data Machine from Server
+
+ * @details   : Get Data Machine from server, specifically Status Machine on or off.
+ *              If data status-machine On, it means Controler must activate machine by trigger if.
+ *              If data status-machine Off, it means machine is off and nothing to do with the machine.
+ *              
+ *              If status-machine change from false(0) to true(1) -> setMachineOn = TRUE and machineOn = true
+ * 
+ * @param     : none
+ * 
+ * @retval    : none
+ *  
+ */
 void SERVER_getJsonResponse(){
     http.begin(URL_GET); //Specify the URL
     
@@ -38,6 +53,17 @@ void SERVER_getJsonResponse(){
     http.end(); //Free the resources
 }
 
+/* 
+ * @brief     : Update Machine Data(status on off machine) to Server
+ *
+ * @details   : Access server using URL_UPDATE address and then send update message that contain machine_status data.
+ *              Value of machine_status variable is TRUE(if Washer/Dryer ON) and FALSE(if Washer?Sryer OFF)
+ * 
+ * @param     : stsMachine (TRUE = machine ON, FALSE = machine OFF)
+ * 
+ * @retval    : TRUE, if success update data to server
+ *              FALSE, if failed update data to server
+ */
 bool SERVER_Update(bool stsMachine){
   http.begin(URL_UPDATE);
 
