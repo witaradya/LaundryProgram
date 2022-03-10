@@ -33,9 +33,9 @@ void SERVER_getJsonResponse(){
       deserializeJson(doc,http.getString());
 
       machineState = doc["machine_status"];
-      // Serial.print("Mesin status : ");
-      // Serial.println(machineState);
-      if(machineState && !prevMachineState) {
+
+      // If machineState = TRUE and !prevMachine = FALSE and Menit, detik equal to 0
+      if(machineState && !prevMachineState && ((menit == 0) && (detik == 0))) {
         setMachineON = true;
         machineOn = true;
         // Serial.println("Nyalakan Mesin ...");
