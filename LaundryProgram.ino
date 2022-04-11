@@ -21,110 +21,77 @@
 */
 
 
+//#define DEBUG
+
 /*
  * Choose one to activate 1 device that will you use
  */
-#define WASHER_1  //id = 1
-//#define WASHER_2  //id = 2
-//#define WASHER_3  //id = 3
-//#define DRYER_1   //id = 4
-//#define DRYER_2   //id = 5
-//#define DRYER_3   //id = 6
+//#define WASHER_1       //NoMesin = 1
+//#define WASHER_3     //NoMesin = 3
+#define WASHER_5     //NoMesin = 5
+//#define DRYER_2      //NoMesin = 2
+//#define DRYER_4      //NoMesin = 4
+//#define DRYER_6      //NoMesin = 6
 
 #include <WiFi.h>
+#include <ESPmDNS.h>
+#include <WiFiUdp.h>
+#include <ArduinoOTA.h>
 #include <AsyncTCP.h>
-#include <ESPAsyncWebServer.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include "EEPROM.h"
-#include "FS.h"
-#include "SPIFFS.h"
-
-#define FORMAT_SPIFFS_IF_FAILED true
 
 #ifdef WASHER_1
   #define URL_UPDATE "http://192.168.1.30:8000/update?sl_id=1"
   #define URL_GET "http://192.168.1.30:8000/machine-id?sl_id=1"
-  const char* ssid = "WASHER 1";
-
-#elif WASHER_2
-  #define URL_UPDATE "http://192.168.1.30:8000/update?sl_id=2"
-  #define URL_GET "http://192.168.1.30:8000/machine-id?sl_id=2"
-  const char* ssid = "WASHER 2";
-
-#elif WASHER_3
-  #define URL_UPDATE "http://192.168.1.30:8000/update?sl_id=3"
-  #define URL_GET "http://192.168.1.30:8000/machine-id?sl_id=3"
-  const char* ssid = "WASHER 3";
-
-#elif DRYER_1
-  #define URL_UPDATE "http://192.168.1.30:8000/update?sl_id=4"
-  #define URL_GET "http://192.168.1.30:8000/machine-id?sl_id=4"
-  const char* ssid = "DRYER 1";
-
-#elif DRYER_2
-  #define URL_UPDATE "http://192.168.1.30:8000/update?sl_id=5"
-  #define URL_GET "http://192.168.1.30:8000/machine-id?sl_id=5"
-  const char* ssid = "DRYER 2";
-
-#elif DRYER_3
-  #define URL_UPDATE "http://192.168.1.30:8000/update?sl_id=6"
-  #define URL_GET "http://192.168.1.30:8000/machine-id?sl_id=6"
-  const char* ssid = "DRYER 3";
+  #define TON_MACHINE   33 //minutes
 #endif
 
+#ifdef WASHER_3
+  #define URL_UPDATE "http://192.168.1.30:8000/update?sl_id=2"
+  #define URL_GET "http://192.168.1.30:8000/machine-id?sl_id=2"
+  #define TON_MACHINE   33 //minutes
+#endif
+
+#ifdef WASHER_5
+  #define URL_UPDATE "http://192.168.1.30:8000/update?sl_id=3"
+  #define URL_GET "http://192.168.1.30:8000/machine-id?sl_id=3"
+  #define TON_MACHINE   33 //minutes
+#endif
+
+#ifdef DRYER_2
+  #define URL_UPDATE "http://192.168.1.30:8000/update?sl_id=4"
+  #define URL_GET "http://192.168.1.30:8000/machine-id?sl_id=4"
+  #define TON_MACHINE   45 //minutes
+#endif
+
+#ifdef DRYER_4
+  #define URL_UPDATE "http://192.168.1.30:8000/update?sl_id=5"
+  #define URL_GET "http://192.168.1.30:8000/machine-id?sl_id=5"
+  #define TON_MACHINE   45 //minutes
+#endif
+
+#ifdef DRYER_6
+  #define URL_UPDATE "http://192.168.1.30:8000/update?sl_id=6"
+  #define URL_GET "http://192.168.1.30:8000/machine-id?sl_id=6"
+  #define TON_MACHINE   45 //minutes
+#endif
 
 #define LED_WIFI      19
 #define RESET_BTN     34
 #define PIN_MACHINE   25
-#define PIN_MACHINE1  26
-#define PIN_MACHINE2  27
-#define PIN_MACHINE3  14
-#define TON_MACHINE   3  //minutes
 
 #define STS_ADDR    0
 #define MINUTE_ADDR 1
 #define SECOND_ADDR 2
 
-AsyncWebServer server(80);
-
 HTTPClient http;
 
 TaskHandle_t Task1;
 
-const char* password = "12345678";
-
-const char* FileSSID = "/ssid.txt";
-const char* FilePASS = "/pass.txt";
-
-const char index_html[] PROGMEM = R"rawliteral(
-<!DOCTYPE HTML><html><head>
-  <title>ESP Input Form</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    .center { margin-left:auto; margin-right:auto; font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
-    margin-top: 35px;border-collapse: collapse; width: 80%; text-align: center; }
-    input[type=submit] { background-color: #D91C1C; color: white; padding: 10px 20px; margin: 5px 0;
-          border: none; border-radius: 3px; cursor: pointer; }
-    input[type=submit]:hover { background-color: #EB606C; }
-    h2{margin-top:35px; text-align:center; background-color: #FFFFFF;}
-  </style><h2>LAUNDRY</h2></head><body>
-  <table class="center">
-    <form name="loginForm" action="/get">
-      <tr><th>Username</th><td><input type="text" id="ssid" name="ssid"></td></tr>
-      <tr><td></td></tr>
-      <tr><th>Password</th><td><input type="text" id="pass" name="pass"></td></tr>
-      <tr><td></td></tr>
-      <tr><th colspan="2"><input type="submit" value="Submit"></th></tr>
-    </form></table>
-  </body></html>)rawliteral";
-
-
-// LOGIN
-String UserName, PassWord;
-bool OpenWeb = false, disconnect = true;
-int firstWait = 1;
-int * waiting = &firstWait;
+const char* ssid = "laundryIOT";
+const char* password = "expresss";
 
 // TIMER
 unsigned long prevTime, currentTime;
@@ -143,8 +110,6 @@ uint8_t currentState;
 unsigned long pressTime, rilisTime;
 
 //EEPROM
-
-
 /*
    @brief     : EEPROM Initialization Function
 
@@ -163,8 +128,8 @@ void EEPROM_Init() {
   menit = EEPROM.read(MINUTE_ADDR);
   detik = EEPROM.read(SECOND_ADDR);
 
-  // Serial.print("EEPROM : "); Serial.print(machineSts);
-  // Serial.print("\t"); Serial.print(menit); Serial.print("\t"); Serial.println(detik);
+  Serial.print("EEPROM : "); Serial.print(machineSts);
+  Serial.print("\t"); Serial.print(menit); Serial.print("\t"); Serial.println(detik);
 
   // If machineSts = 1, menit != 0, and detik != 0
   // It means, in the past, machine was on but suddenly power is off, so I will continue to turn on the machine.
@@ -198,11 +163,12 @@ void EEPROM_Init() {
 void MACHINE_on() {
   if (machineOn) {
     Serial.println("Mesin Dinyalakan");
-
-    digitalWrite(PIN_MACHINE, HIGH);
-    delay(50);
-    digitalWrite(PIN_MACHINE, LOW);
-    delay(100);
+    for(uint8_t aa = 0; aa < 3; aa++){
+      digitalWrite(PIN_MACHINE, HIGH);
+      delay(50);
+      digitalWrite(PIN_MACHINE, LOW);
+      delay(2000);
+    }
 
     machineOn = false;
   }
@@ -241,13 +207,7 @@ void setup() {
 
   pinMode(RESET_BTN, INPUT);
 
-  if (!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)) {
-    Serial.println("SPIFFS Mount Failed");
-    return;
-  }
-  Serial.println("Initalized");
-
-  WIFI_Connection();
+  WIFI_Pairing();
 
   EEPROM_Init();
 
@@ -261,6 +221,7 @@ void setup() {
     0);          /* pin task to core 0 */
   delay(500);
 
+  OTA_Init();
 }
 
 // Devide 2 task in 2 core
@@ -268,6 +229,28 @@ void setup() {
 // Task2 control timer when machine turn on
 void Task1code( void * pvParameters ) {
   while (1) {
+    // Check button is pressed or not
+    Button_ByPass();
+
+    /*// paksaNyala is flag that used to indicate the RESET_BTN button is being pressed or not
+    if (paksaNyala) {
+      machineOn = true;
+      MACHINE_on();
+      paksaNyala = false;
+    }*/
+
+    if(paksaNyala){
+      setMachineON = false;
+      machineOn = false;
+
+      updateServer = true;
+
+      currentTime = 0;
+      prevTime = 0;
+
+      paksaNyala = false;
+    }
+    
     // setMachineOn will be true if status machine in the server change from 0 to 1, it means the controller must activate this Wassher/Dryer
     if (setMachineON) {
       MACHINE_on();
@@ -290,11 +273,13 @@ void Task1code( void * pvParameters ) {
           updateServer = true;
           setMachineON = false;
         }
-        Serial.print("Menit : ");
-        Serial.print(menit);
-        Serial.print("\t");
-        Serial.print("Detik : ");
-        Serial.println(detik);
+        #ifdef DEBUG
+          Serial.print("Menit : ");
+          Serial.print(menit);
+          Serial.print("\t");
+          Serial.print("Detik : ");
+          Serial.println(detik);
+        #endif
         prevTime = millis();
       }
     }
@@ -303,16 +288,16 @@ void Task1code( void * pvParameters ) {
 }
 
 void loop() {
-  // Check button is pressed or not
-  Button_ByPass();
-
-  // Check this controller is connectea to Access Point or not
-  // If not connect, Turn off led indicator, change this module to Access Poin
-  // you can access 192.168.4.1 to input new SSID and PASSWORD of available WiFi
+  ArduinoOTA.handle();
+  
+  // Check this controller is connected to Access Point or not
+  // If not connect, Turn off led indicator and reconnect to WIFI until connected
   if (WiFi.status() != WL_CONNECTED) {
+    #ifdef DEBUG
+      Serial.println("WIFI : Reconnecting");
+    #endif
     digitalWrite(LED_WIFI, LOW);
-    disconnect = true;
-    WIFI_Connection();
+    WIFI_Pairing();
   }
   // If this module connected to WiFi, get update status machine from server and then trigger the machine if status machine change from 0 to 1
   else {
@@ -321,7 +306,9 @@ void loop() {
 
     // Update status Washer/Dryer to server after Washer/Dryer is finished
     if (updateServer) {
-      Serial.println("Update Status Machine on Server");
+      #ifdef DEBUG
+        Serial.println("Update Status Machine on Server");
+      #endif
       if (SERVER_Update(0)) {
         menit = 0;
         detik = 0;
@@ -335,12 +322,5 @@ void loop() {
         EEPROM.commit();
       }
     }
-  }
-
-  // paksaNyala is flag that used to indicate the RESET_BTN button is being pressed or not
-  if (paksaNyala && setMachineON) {
-    machineOn = true;
-    MACHINE_on();
-    paksaNyala = false;
   }
 }

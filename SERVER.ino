@@ -33,12 +33,17 @@ void SERVER_getJsonResponse(){
       deserializeJson(doc,http.getString());
 
       machineState = doc["machine_status"];
-
+      #ifdef DEBUG
+        Serial.print("SERVER : Status Mesin = ");
+        Serial.println(machineState);
+      #endif
       // If machineState = TRUE and !prevMachine = FALSE and Menit, detik equal to 0
       if(machineState && !prevMachineState && ((menit == 0) && (detik == 0))) {
         setMachineON = true;
         machineOn = true;
-        // Serial.println("Nyalakan Mesin ...");
+        #ifdef DEBUG
+          Serial.println("Nyalakan Mesin ...");
+        #endif
       }
         // String payload = http.getString();
         // Serial.println(httpCode);
@@ -74,13 +79,17 @@ bool SERVER_Update(bool stsMachine){
   else httpResponseCode = http.PUT("{\"machine_status\":\"false\"}"); 
     
   if(httpResponseCode>0){
-    String response = http.getString();   
-    Serial.println(httpResponseCode);
-    Serial.println(response);          
+    String response = http.getString();  
+    #ifdef DEBUG 
+      Serial.println(httpResponseCode);
+      Serial.println(response);          
+    #endif
   }
   else{
-    Serial.print("Error on sending PUT Request: ");
-    Serial.println(httpResponseCode);
+    #ifdef DEBUG
+      Serial.print("Error on sending PUT Request: ");
+      Serial.println(httpResponseCode);
+    #endif
   }
   
   http.end();
